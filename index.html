@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="id">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMK Krian 1 Sidoarjo</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    html {
+      height: 100%;
+    }
+    
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+    }
+    
+    .carousel-slide {
+      display: none;
+      width: 100%;
+      height: 500px;
+      object-fit: cover;
+    }
+    
+    .carousel-slide.active {
+      display: block;
+    }
+    
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,0.5);
+      color: white;
+      border: none;
+      padding: 16px;
+      cursor: pointer;
+      z-index: 10;
+      transition: background 0.3s;
+    }
+    
+    .carousel-btn:hover {
+      background: rgba(0,0,0,0.8);
+    }
+    
+    .carousel-btn.prev {
+      left: 20px;
+    }
+    
+    .carousel-btn.next {
+      right: 20px;
+    }
+    
+    .carousel-indicators {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    
+    .indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .indicator.active {
+      background: white;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90%;
+      overflow-y: auto;
+      border-radius: 12px;
+      animation: slideDown 0.3s ease-out;
+    }
+    
+    @keyframes slideDown {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 2000;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .spinner {
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .teacher-card, .facility-card, .major-card {
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .teacher-card:hover, .facility-card:hover, .major-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body>
+  <div id="app" class="min-h-full"></div>
+  <script>
+    const defaultConfig = {
+      background_color: "#f8fafc",
+      surface_color: "#ffffff",
+      text_color: "#1e293b",
+      primary_action_color: "#2563eb",
+      secondary_action_color: "#64748b",
+      font_family: "Inter",
+      font_size: 16,
+      school_name: "SMK Krian 1 Sidoarjo",
+      school_tagline: "Mencetak Tenaga Profesional yang Kompeten dan Berakhlak Mulia",
+      about_title: "Tentang Sekolah",
+      about_description: "SMK Krian 1 Sidoarjo adalah lembaga pendidikan kejuruan yang berkomitmen menghasilkan lulusan berkualitas dengan keterampilan teknis dan karakter yang kuat. Kami mempersiapkan siswa untuk siap kerja dan berwirausaha.",
+      facilities_title: "Fasilitas Sekolah",
+      teachers_title: "Daftar Guru",
+      majors_title: "Jurusan yang Tersedia",
+      cta_button_text: "Daftar Sekarang",
+      form_title: "Formulir Pendaftaran Siswa Baru",
+      submit_button_text: "Kirim Pendaftaran",
+      footer_text: "© 2024 SMK Krian 1 Sidoarjo. Semua Hak Dilindungi."
+    };
+
+    let isSubmitting = false;
+    let currentSlide = 0;
+    let carouselInterval;
+
+    const carouselImages = [
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1200&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1200&h=500&fit=crop"
+    ];
+
+    const STORAGE_KEY = 'smk_krian_registrations';
+
+    function getRegistrations() {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : [];
+    }
+
+    function saveRegistration(registration) {
+      const registrations = getRegistrations();
+      registrations.push(registration);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(registrations));
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    function openModal() {
+      const modal = document.getElementById('registration-modal');
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('registration-modal');
+      modal.classList.remove('show');
+      document.body.style.overflow = 'auto';
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+      
+      if (isSubmitting) return;
+
+      isSubmitting = true;
+      const submitButton = document.getElementById('submit-button');
+      const buttonText = submitButton.querySelector('.button-text');
+      const buttonSpinner = submitButton.querySelector('.button-spinner');
+      
+      submitButton.disabled = true;
+      buttonText.classList.add('hidden');
+      buttonSpinner.classList.remove('hidden');
+
+      // Simulate async operation
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const formData = {
+        id: Date.now().toString(),
+        nama_lengkap: document.getElementById('nama_lengkap').value,
+        tanggal_lahir: document.getElementById('tanggal_lahir').value,
+        jenis_kelamin: document.getElementById('jenis_kelamin').value,
+        alamat: document.getElementById('alamat').value,
+        nama_orang_tua: document.getElementById('nama_orang_tua').value,
+        nomor_telepon: document.getElementById('nomor_telepon').value,
+        email: document.getElementById('email').value,
+        jurusan_pilihan: document.getElementById('jurusan_pilihan').value,
+        tanggal_daftar: new Date().toISOString()
+      };
+
+      try {
+        saveRegistration(formData);
+        showToast('Pendaftaran berhasil disimpan!', 'success');
+        document.getElementById('registration-form').reset();
+        closeModal();
+      } catch (error) {
+        showToast('Gagal menyimpan pendaftaran. Silakan coba lagi.', 'error');
+      }
+
+      isSubmitting = false;
+      submitButton.disabled = false;
+      buttonText.classList.remove('hidden');
+      buttonSpinner.classList.add('hidden');
+    }
+
+    function showSlide(index) {
+      const slides = document.querySelectorAll('.carousel-slide');
+      const indicators = document.querySelectorAll('.indicator');
+      
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+      });
+      
+      indicators.forEach((indicator, i) => {
+        indicator.classList.toggle('active', i === index);
+      });
+      
+      currentSlide = index;
+    }
+
+    function nextSlide() {
+      const slides = document.querySelectorAll('.carousel-slide');
+      currentSlide = (currentSlide + 1) % slides.length;
+      showSlide(currentSlide);
+    }
+
+    function prevSlide() {
+      const slides = document.querySelectorAll('.carousel-slide');
+      currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+      showSlide(currentSlide);
+    }
+
+    function startCarousel() {
+      carouselInterval = setInterval(nextSlide, 5000);
+    }
+
+    function stopCarousel() {
+      clearInterval(carouselInterval);
+    }
+
+    async function onConfigChange(config) {
+      const baseSize = config.font_size || defaultConfig.font_size;
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseFontStack = 'system-ui, -apple-system, sans-serif';
+      const fontFamily = `${customFont}, ${baseFontStack}`;
+
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+      const secondaryColor = config.secondary_action_color || defaultConfig.secondary_action_color;
+
+      document.body.style.backgroundColor = backgroundColor;
+      document.body.style.color = textColor;
+      document.body.style.fontFamily = fontFamily;
+      document.body.style.fontSize = `${baseSize}px`;
+
+      // Header
+      const navbar = document.getElementById('navbar');
+      if (navbar) navbar.style.backgroundColor = surfaceColor;
+
+      const schoolNameEl = document.getElementById('school-name');
+      if (schoolNameEl) {
+        schoolNameEl.textContent = config.school_name || defaultConfig.school_name;
+        schoolNameEl.style.fontSize = `${baseSize * 1.5}px`;
+        schoolNameEl.style.color = textColor;
+      }
+
+      const registerBtn = document.getElementById('register-btn');
+      if (registerBtn) {
+        registerBtn.style.backgroundColor = primaryColor;
+        registerBtn.style.fontSize = `${baseSize}px`;
+      }
+
+      // Hero
+      const heroContent = document.getElementById('hero-content');
+      if (heroContent) heroContent.style.backgroundColor = 'rgba(0,0,0,0.6)';
+
+      const heroTitle = document.getElementById('hero-title');
+      if (heroTitle) {
+        heroTitle.textContent = config.school_name || defaultConfig.school_name;
+        heroTitle.style.fontSize = `${baseSize * 2.5}px`;
+      }
+
+      const heroTagline = document.getElementById('hero-tagline');
+      if (heroTagline) {
+        heroTagline.textContent = config.school_tagline || defaultConfig.school_tagline;
+        heroTagline.style.fontSize = `${baseSize * 1.25}px`;
+      }
+
+      const heroCta = document.getElementById('hero-cta');
+      if (heroCta) {
+        heroCta.textContent = config.cta_button_text || defaultConfig.cta_button_text;
+        heroCta.style.backgroundColor = primaryColor;
+        heroCta.style.fontSize = `${baseSize * 1.125}px`;
+      }
+
+      // About
+      const aboutSection = document.getElementById('about-section');
+      if (aboutSection) aboutSection.style.backgroundColor = surfaceColor;
+
+      const aboutTitle = document.getElementById('about-title');
+      if (aboutTitle) {
+        aboutTitle.textContent = config.about_title || defaultConfig.about_title;
+        aboutTitle.style.fontSize = `${baseSize * 2}px`;
+        aboutTitle.style.color = textColor;
+      }
+
+      const aboutDesc = document.getElementById('about-description');
+      if (aboutDesc) {
+        aboutDesc.textContent = config.about_description || defaultConfig.about_description;
+        aboutDesc.style.fontSize = `${baseSize * 1.125}px`;
+        aboutDesc.style.color = textColor;
+      }
+
+      // Facilities
+      const facilitiesTitle = document.getElementById('facilities-title');
+      if (facilitiesTitle) {
+        facilitiesTitle.textContent = config.facilities_title || defaultConfig.facilities_title;
+        facilitiesTitle.style.fontSize = `${baseSize * 2}px`;
+        facilitiesTitle.style.color = textColor;
+      }
+
+      const facilityCards = document.querySelectorAll('.facility-card');
+      facilityCards.forEach(card => {
+        card.style.backgroundColor = surfaceColor;
+      });
+
+      const facilityIcons = document.querySelectorAll('.facility-icon');
+      facilityIcons.forEach(icon => {
+        icon.style.color = primaryColor;
+      });
+
+      const facilityTitles = document.querySelectorAll('.facility-title');
+      facilityTitles.forEach(title => {
+        title.style.fontSize = `${baseSize * 1.125}px`;
+        title.style.color = textColor;
+      });
+
+      const facilityTexts = document.querySelectorAll('.facility-text');
+      facilityTexts.forEach(text => {
+        text.style.fontSize = `${baseSize * 0.875}px`;
+        text.style.color = secondaryColor;
+      });
+
+      // Teachers
+      const teachersSection = document.getElementById('teachers-section');
+      if (teachersSection) teachersSection.style.backgroundColor = surfaceColor;
+
+      const teachersTitle = document.getElementById('teachers-title');
+      if (teachersTitle) {
+        teachersTitle.textContent = config.teachers_title || defaultConfig.teachers_title;
+        teachersTitle.style.fontSize = `${baseSize * 2}px`;
+        teachersTitle.style.color = textColor;
+      }
+
+      const teacherCards = document.querySelectorAll('.teacher-card');
+      teacherCards.forEach(card => {
+        card.style.backgroundColor = backgroundColor;
+      });
+
+      const teacherNames = document.querySelectorAll('.teacher-name');
+      teacherNames.forEach(name => {
+        name.style.fontSize = `${baseSize * 1.125}px`;
+        name.style.color = textColor;
+      });
+
+      const teacherSubjects = document.querySelectorAll('.teacher-subject');
+      teacherSubjects.forEach(subject => {
+        subject.style.fontSize = `${baseSize * 0.875}px`;
+        subject.style.color = secondaryColor;
+      });
+
+      // Majors
+      const majorsTitle = document.getElementById('majors-title');
+      if (majorsTitle) {
+        majorsTitle.textContent = config.majors_title || defaultConfig.majors_title;
+        majorsTitle.style.fontSize = `${baseSize * 2}px`;
+        majorsTitle.style.color = textColor;
+      }
+
+      const majorCards = document.querySelectorAll('.major-card');
+      majorCards.forEach(card => {
+        card.style.backgroundColor = surfaceColor;
+      });
+
+      const majorIcons = document.querySelectorAll('.major-icon');
+      majorIcons.forEach(icon => {
+        icon.style.color = primaryColor;
+      });
+
+      const majorTitles = document.querySelectorAll('.major-title');
+      majorTitles.forEach(title => {
+        title.style.fontSize = `${baseSize * 1.25}px`;
+        title.style.color = textColor;
+      });
+
+      const majorTexts = document.querySelectorAll('.major-text');
+      majorTexts.forEach(text => {
+        text.style.fontSize = `${baseSize * 0.875}px`;
+        text.style.color = secondaryColor;
+      });
+
+      // Modal
+      const modalContent = document.getElementById('modal-content');
+      if (modalContent) modalContent.style.backgroundColor = surfaceColor;
+
+      const formTitle = document.getElementById('form-title');
+      if (formTitle) {
+        formTitle.textContent = config.form_title || defaultConfig.form_title;
+        formTitle.style.fontSize = `${baseSize * 1.5}px`;
+        formTitle.style.color = textColor;
+      }
+
+      const closeBtn = document.getElementById('close-modal');
+      if (closeBtn) {
+        closeBtn.style.color = secondaryColor;
+      }
+
+      const labels = document.querySelectorAll('.form-label');
+      labels.forEach(label => {
+        label.style.fontSize = `${baseSize * 0.875}px`;
+        label.style.color = textColor;
+      });
+
+      const inputs = document.querySelectorAll('.form-input');
+      inputs.forEach(input => {
+        input.style.fontSize = `${baseSize}px`;
+        input.style.backgroundColor = backgroundColor;
+        input.style.color = textColor;
+        input.style.borderColor = secondaryColor;
+      });
+
+      const submitButton = document.getElementById('submit-button');
+      if (submitButton) {
+        submitButton.style.backgroundColor = primaryColor;
+        submitButton.style.fontSize = `${baseSize}px`;
+        const buttonTextEl = submitButton.querySelector('.button-text');
+        if (buttonTextEl) {
+          buttonTextEl.textContent = config.submit_button_text || defaultConfig.submit_button_text;
+        }
+      }
+
+      // Footer
+      const footer = document.getElementById('footer');
+      if (footer) footer.style.backgroundColor = textColor;
+
+      const footerText = document.getElementById('footer-text');
+      if (footerText) {
+        footerText.textContent = config.footer_text || defaultConfig.footer_text;
+        footerText.style.fontSize = `${baseSize}px`;
+      }
+    }
+
+    function renderApp() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="min-h-full">
+          <!-- Navbar -->
+          <nav id="navbar" class="shadow-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+              <h1 id="school-name" class="font-bold"></h1>
+              <button id="register-btn" onclick="openModal()" class="text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity">
+                <i class="fas fa-user-plus mr-2"></i>Daftar
+              </button>
+            </div>
+          </nav>
+
+          <!-- Carousel -->
+          <div class="carousel-container">
+            ${carouselImages.map((img, index) => `
+              <img src="${img}" alt="Slide ${index + 1}" class="carousel-slide ${index === 0 ? 'active' : ''}">
+            `).join('')}
+            
+            <button class="carousel-btn prev" onclick="prevSlide()">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="carousel-btn next" onclick="nextSlide()">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+            
+            <div class="carousel-indicators">
+              ${carouselImages.map((_, index) => `
+                <div class="indicator ${index === 0 ? 'active' : ''}" onclick="showSlide(${index})"></div>
+              `).join('')}
+            </div>
+
+            <!-- Hero Content Overlay -->
+            <div id="hero-content" class="absolute inset-0 flex items-center justify-center text-white text-center px-6">
+              <div>
+                <h2 id="hero-title" class="font-bold mb-4"></h2>
+                <p id="hero-tagline" class="mb-8 max-w-2xl mx-auto"></p>
+                <button id="hero-cta" onclick="openModal()" class="text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity">
+                  <i class="fas fa-edit mr-2"></i><span></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- About Section -->
+          <section id="about-section" class="py-16">
+            <div class="max-w-7xl mx-auto px-6">
+              <div class="flex items-center justify-center mb-8">
+                <i class="fas fa-school text-4xl mr-4" style="color: #2563eb;"></i>
+                <h2 id="about-title" class="font-bold"></h2>
+              </div>
+              <p id="about-description" class="text-center max-w-3xl mx-auto leading-relaxed"></p>
+            </div>
+          </section>
+
+          <!-- Facilities Section -->
+          <section class="py-16">
+            <div class="max-w-7xl mx-auto px-6">
+              <h2 id="facilities-title" class="font-bold text-center mb-12"></h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="facility-card rounded-lg p-6 shadow-md text-center">
+                  <i class="facility-icon fas fa-laptop-code text-5xl mb-4"></i>
+                  <h3 class="facility-title font-semibold mb-2">Lab Komputer</h3>
+                  <p class="facility-text">Laboratorium komputer modern dengan perangkat terkini</p>
+                </div>
+                <div class="facility-card rounded-lg p-6 shadow-md text-center">
+                  <i class="facility-icon fas fa-book-open text-5xl mb-4"></i>
+                  <h3 class="facility-title font-semibold mb-2">Perpustakaan</h3>
+                  <p class="facility-text">Koleksi buku lengkap dan ruang baca nyaman</p>
+                </div>
+                <div class="facility-card rounded-lg p-6 shadow-md text-center">
+                  <i class="facility-icon fas fa-flask text-5xl mb-4"></i>
+                  <h3 class="facility-title font-semibold mb-2">Lab Praktikum</h3>
+                  <p class="facility-text">Laboratorium praktik untuk setiap jurusan</p>
+                </div>
+                <div class="facility-card rounded-lg p-6 shadow-md text-center">
+                  <i class="facility-icon fas fa-wifi text-5xl mb-4"></i>
+                  <h3 class="facility-title font-semibold mb-2">WiFi Gratis</h3>
+                  <p class="facility-text">Akses internet cepat di seluruh area sekolah</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Teachers Section -->
+          <section id="teachers-section" class="py-16">
+            <div class="max-w-7xl mx-auto px-6">
+              <h2 id="teachers-title" class="font-bold text-center mb-12"></h2>
+              <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div class="teacher-card rounded-lg p-6 shadow-md text-center">
+                  <div class="w-20 h-20 rounded-full bg-gray-300 mx-auto mb-4 flex items-center justify-center">
+                    <i class="fas fa-user text-3xl text-gray-600"></i>
+                  </div>
+                  <h3 class="teacher-name font-semibold mb-1">Drs. Ahmad Fauzi, M.Pd</h3>
+                  <p class="teacher-subject">Kepala Sekolah</p>
+                </div>
+                <div class="teacher-card rounded-lg p-6 shadow-md text-center">
+                  <div class="w-20 h-20 rounded-full bg-gray-300 mx-auto mb-4 flex items-center justify-center">
+                    <i class="fas fa-user text-3xl text-gray-600"></i>
+                  </div>
+                  <h3 class="teacher-name font-semibold mb-1">Siti Nurhaliza, S.Kom</h3>
+                  <p class="teacher-subject">Guru Teknik Komputer</p>
+                </div>
+                <div class="teacher-card rounded-lg p-6 shadow-md text-center">
+                  <div class="w-20 h-20 rounded-full bg-gray-300 mx-auto mb-4 flex items-center justify-center">
+                    <i class="fas fa-user text-3xl text-gray-600"></i>
+                  </div>
+                  <h3 class="teacher-name font-semibold mb-1">Budi Santoso, S.T</h3>
+                  <p class="teacher-subject">Guru Teknik Mesin</p>
+                </div>
+                <div class="teacher-card rounded-lg p-6 shadow-md text-center">
+                  <div class="w-20 h-20 rounded-full bg-gray-300 mx-auto mb-4 flex items-center justify-center">
+                    <i class="fas fa-user text-3xl text-gray-600"></i>
+                  </div>
+                  <h3 class="teacher-name font-semibold mb-1">Rina Wijaya, S.Pd</h3>
+                  <p class="teacher-subject">Guru Akuntansi</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Majors Section -->
+          <section class="py-16">
+            <div class="max-w-7xl mx-auto px-6">
+              <h2 id="majors-title" class="font-bold text-center mb-12"></h2>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="major-card rounded-lg p-8 shadow-lg text-center">
+                  <i class="major-icon fas fa-desktop text-6xl mb-4"></i>
+                  <h3 class="major-title font-bold mb-3">Teknik Komputer & Jaringan</h3>
+                  <p class="major-text mb-4">Mempelajari instalasi, konfigurasi, dan maintenance sistem komputer dan jaringan</p>
+                  <ul class="major-text text-left space-y-2">
+                    <li><i class="fas fa-check-circle mr-2" style="color: #2563eb;"></i>Networking</li>
+                    <li><i class="fas fa-check-circle mr-2" style="color: #2563eb;"></i>Hardware</li>
+                    <li><i class="fas fa-check-circle mr-2" style="color: #2563eb;"></i>Software</li>
+                  </ul>
+                </div>
+                <div class="major-card rounded-lg p-8 shadow-lg text-center">
+                  <i class="major-icon fas fa-cogs text-6xl mb-4"></i>
+                  <h3 class="major-title font-bold mb-3">Teknik Pemesinan</h3>
+                  <p class="major-text mb-4">Mempelajari proses pembuatan komponen mesin dengan berbagai teknik machining</p>
+                  <ul class="major-text text-left space-y-2">
+                    <li><i class="fas fa-check-circle mr-2" style="color: #2563eb;"></i>CNC</li>
+                    <li><i class="fas fa-check-circle mr-2" style="color: #2563eb;"></i>Bubut & Frais</li>
+                    <li><i class="fas fa-check-circle mr-2" style="color: #2563eb;"></i>CAD/CAM</li>
+                  </ul>
+                </div>
+                <div class="major-card rounded-lg p-8 shadow-lg text-center">
+                  <i class="major-icon fas fa-calculator text-6xl mb-4"></i>
+                  <h3 class="major-title font-bold mb-3">Akuntansi & Keuangan</h3>
+                  <p class="major-text mb-4">Mempelajari pencatatan, pelaporan, dan analisis keuangan perusahaan</p>
+                  <ul class="major-text text-left space-y-2">
+                    <li><i class="fas fa-check-circle mr-2" style="color: #2563eb;"></i>Pembukuan</li>
+                    <li><i class="fas fa-check-circle mr-2" style="color: #2563eb;"></i>Perpajakan</li>
+                    <li><i class="fas fa-check-circle mr-2" style="color: #2563eb;"></i>Audit</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Footer -->
+          <footer id="footer" class="text-white py-8">
+            <div class="max-w-7xl mx-auto px-6">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
+                <div>
+                  <h3 class="font-bold text-lg mb-3"><i class="fas fa-school mr-2"></i>SMK Krian 1 Sidoarjo</h3>
+                  <p class="text-sm opacity-90">Jl. Raya Krian No. 1, Sidoarjo, Jawa Timur</p>
+                </div>
+                <div>
+                  <h3 class="font-bold text-lg mb-3"><i class="fas fa-phone mr-2"></i>Kontak</h3>
+                  <p class="text-sm opacity-90">Telp: (031) 1234567</p>
+                  <p class="text-sm opacity-90">Email: info@smkkrian1.sch.id</p>
+                </div>
+                <div>
+                  <h3 class="font-bold text-lg mb-3"><i class="fas fa-share-alt mr-2"></i>Media Sosial</h3>
+                  <div class="flex gap-4">
+                    <a href="#" class="text-2xl hover:opacity-75 transition-opacity"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="text-2xl hover:opacity-75 transition-opacity"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-2xl hover:opacity-75 transition-opacity"><i class="fab fa-youtube"></i></a>
+                  </div>
+                </div>
+              </div>
+              <div class="border-t border-white border-opacity-20 pt-6 text-center">
+                <p id="footer-text" class="text-sm opacity-90"></p>
+              </div>
+            </div>
+          </footer>
+
+          <!-- Registration Modal -->
+          <div id="registration-modal" class="modal">
+            <div id="modal-content" class="modal-content shadow-2xl">
+              <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                  <h2 id="form-title" class="font-bold"></h2>
+                  <button id="close-modal" onclick="closeModal()" class="text-3xl hover:opacity-75 transition-opacity">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                
+                <form id="registration-form" onsubmit="return false;">
+                  <div class="space-y-4">
+                    <div>
+                      <label for="nama_lengkap" class="form-label block font-medium mb-2">
+                        <i class="fas fa-user mr-2"></i>Nama Lengkap *
+                      </label>
+                      <input type="text" id="nama_lengkap" required class="form-input w-full px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label for="tanggal_lahir" class="form-label block font-medium mb-2">
+                          <i class="fas fa-calendar mr-2"></i>Tanggal Lahir *
+                        </label>
+                        <input type="date" id="tanggal_lahir" required class="form-input w-full px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      
+                      <div>
+                        <label for="jenis_kelamin" class="form-label block font-medium mb-2">
+                          <i class="fas fa-venus-mars mr-2"></i>Jenis Kelamin *
+                        </label>
+                        <select id="jenis_kelamin" required class="form-input w-full px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          <option value="">Pilih...</option>
+                          <option value="Laki-laki">Laki-laki</option>
+                          <option value="Perempuan">Perempuan</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label for="alamat" class="form-label block font-medium mb-2">
+                        <i class="fas fa-map-marker-alt mr-2"></i>Alamat Lengkap *
+                      </label>
+                      <textarea id="alamat" required rows="3" class="form-input w-full px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                    
+                    <div>
+                      <label for="nama_orang_tua" class="form-label block font-medium mb-2">
+                        <i class="fas fa-users mr-2"></i>Nama Orang Tua/Wali *
+                      </label>
+                      <input type="text" id="nama_orang_tua" required class="form-input w-full px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label for="nomor_telepon" class="form-label block font-medium mb-2">
+                          <i class="fas fa-phone mr-2"></i>Nomor Telepon *
+                        </label>
+                        <input type="tel" id="nomor_telepon" required class="form-input w-full px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      
+                      <div>
+                        <label for="email" class="form-label block font-medium mb-2">
+                          <i class="fas fa-envelope mr-2"></i>Email *
+                        </label>
+                        <input type="email" id="email" required class="form-input w-full px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label for="jurusan_pilihan" class="form-label block font-medium mb-2">
+                        <i class="fas fa-graduation-cap mr-2"></i>Jurusan Pilihan *
+                      </label>
+                      <select id="jurusan_pilihan" required class="form-input w-full px-4 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Pilih Jurusan...</option>
+                        <option value="Teknik Komputer & Jaringan">Teknik Komputer & Jaringan</option>
+                        <option value="Teknik Pemesinan">Teknik Pemesinan</option>
+                        <option value="Akuntansi & Keuangan">Akuntansi & Keuangan</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="mt-6">
+                    <button type="submit" id="submit-button" class="w-full text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center">
+                      <span class="button-text"></span>
+                      <div class="button-spinner hidden spinner ml-2"></div>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('registration-form').addEventListener('submit', handleSubmit);
+      
+      const modal = document.getElementById('registration-modal');
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+      startCarousel();
+    }
+
+    async function init() {
+      renderApp();
+
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              {
+                get: () => config.background_color || defaultConfig.background_color,
+                set: (value) => {
+                  config.background_color = value;
+                  window.elementSdk.setConfig({ background_color: value });
+                }
+              },
+              {
+                get: () => config.surface_color || defaultConfig.surface_color,
+                set: (value) => {
+                  config.surface_color = value;
+                  window.elementSdk.setConfig({ surface_color: value });
+                }
+              },
+              {
+                get: () => config.text_color || defaultConfig.text_color,
+                set: (value) => {
+                  config.text_color = value;
+                  window.elementSdk.setConfig({ text_color: value });
+                }
+              },
+              {
+                get: () => config.primary_action_color || defaultConfig.primary_action_color,
+                set: (value) => {
+                  config.primary_action_color = value;
+                  window.elementSdk.setConfig({ primary_action_color: value });
+                }
+              },
+              {
+                get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+                set: (value) => {
+                  config.secondary_action_color = value;
+                  window.elementSdk.setConfig({ secondary_action_color: value });
+                }
+              }
+            ],
+            borderables: [],
+            fontEditable: {
+              get: () => config.font_family || defaultConfig.font_family,
+              set: (value) => {
+                config.font_family = value;
+                window.elementSdk.setConfig({ font_family: value });
+              }
+            },
+            fontSizeable: {
+              get: () => config.font_size || defaultConfig.font_size,
+              set: (value) => {
+                config.font_size = value;
+                window.elementSdk.setConfig({ font_size: value });
+              }
+            }
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ["school_name", config.school_name || defaultConfig.school_name],
+            ["school_tagline", config.school_tagline || defaultConfig.school_tagline],
+            ["about_title", config.about_title || defaultConfig.about_title],
+            ["about_description", config.about_description || defaultConfig.about_description],
+            ["facilities_title", config.facilities_title || defaultConfig.facilities_title],
+            ["teachers_title", config.teachers_title || defaultConfig.teachers_title],
+            ["majors_title", config.majors_title || defaultConfig.majors_title],
+            ["cta_button_text", config.cta_button_text || defaultConfig.cta_button_text],
+            ["form_title", config.form_title || defaultConfig.form_title],
+            ["submit_button_text", config.submit_button_text || defaultConfig.submit_button_text],
+            ["footer_text", config.footer_text || defaultConfig.footer_text]
+          ])
+        });
+      }
+
+      await onConfigChange(window.elementSdk?.config || defaultConfig);
+    }
+
+    init();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99d42099843da08b',t:'MTc2MjkzMDU2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
