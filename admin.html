@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Pendaftaran SMK Krian 1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Gaya untuk modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90%;
+      overflow-y: auto;
+      border-radius: 12px;
+      animation: slideDown 0.3s ease-out;
+      background: white;
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <div id="login-screen" class="flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
+      <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">
+        <i class="fas fa-user-shield mr-2"></i>Admin Login
+      </h2>
+      
+      <form id="login-form">
+        <div class="mb-4">
+          <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+          <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <div class="mb-6">
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+          <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <div id="error-message" class="text-red-500 text-sm mb-4 hidden"></div>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+          Login
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="admin-dashboard" class="hidden">
+    <div class="container mx-auto p-8">
+      <header class="mb-8 flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-blue-700"><i class="fas fa-user-shield mr-2"></i>Admin Panel Pendaftaran</h1>
+          <p class="text-gray-600">SMK Krian 1 Sidoarjo</p>
+        </div>
+        <button id="logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors">
+          <i class="fas fa-sign-out-alt mr-2"></i>Logout
+        </button>
+      </header>
+
+      <div class="flex justify-end mb-4">
+        <button id="add-new-btn" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+          <i class="fas fa-plus mr-2"></i>Tambah Pendaftar
+        </button>
+      </div>
+
+      <div class="bg-white shadow-lg rounded-lg overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jurusan</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl Daftar</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontak</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="registrants-table-body" class="bg-white divide-y divide-gray-200">
+            </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="crud-modal" class="modal">
+      <div class="modal-content shadow-2xl">
+        <div class="p-8">
+          <div class="flex justify-between items-center mb-6">
+            <h2 id="modal-title" class="text-2xl font-bold">Formulir Pendaftar</h2>
+            <button id="close-modal" class="text-gray-500 text-3xl hover:text-gray-800 transition-opacity">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <form id="crud-form">
+            <input type="hidden" id="registration-id">
+            
+            <div class="space-y-4">
+              <div>
+                <label for="nama_lengkap" class="block font-medium mb-2"><i class="fas fa-user mr-2"></i>Nama Lengkap *</label>
+                <input type="text" id="nama_lengkap" required class="w-full px-4 py-2 rounded-lg border-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="tanggal_lahir" class="block font-medium mb-2"><i class="fas fa-calendar mr-2"></i>Tanggal Lahir *</label>
+                  <input type="date" id="tanggal_lahir" required class="w-full px-4 py-2 rounded-lg border-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label for="jenis_kelamin" class="block font-medium mb-2"><i class="fas fa-venus-mars mr-2"></i>Jenis Kelamin *</label>
+                  <select id="jenis_kelamin" required class="w-full px-4 py-2 rounded-lg border-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Pilih...</option>
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label for="alamat" class="block font-medium mb-2"><i class="fas fa-map-marker-alt mr-2"></i>Alamat Lengkap *</label>
+                <textarea id="alamat" required rows="3" class="w-full px-4 py-2 rounded-lg border-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+              </div>
+              
+              <div>
+                <label for="nama_orang_tua" class="block font-medium mb-2"><i class="fas fa-users mr-2"></i>Nama Orang Tua/Wali *</label>
+                <input type="text" id="nama_orang_tua" required class="w-full px-4 py-2 rounded-lg border-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="nomor_telepon" class="block font-medium mb-2"><i class="fas fa-phone mr-2"></i>Nomor Telepon *</label>
+                  <input type="tel" id="nomor_telepon" required class="w-full px-4 py-2 rounded-lg border-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label for="email" class="block font-medium mb-2"><i class="fas fa-envelope mr-2"></i>Email *</label>
+                  <input type="email" id="email" required class="w-full px-4 py-2 rounded-lg border-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+              </div>
+              
+              <div>
+                <label for="jurusan_pilihan" class="block font-medium mb-2"><i class="fas fa-graduation-cap mr-2"></i>Jurusan Pilihan *</label>
+                <select id="jurusan_pilihan" required class="w-full px-4 py-2 rounded-lg border-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Pilih Jurusan...</option>
+                  <option value="Teknik Komputer & Jaringan">Teknik Komputer & Jaringan</option>
+                  <option value="Teknik Pemesinan">Teknik Pemesinan</option>
+                  <option value="Akuntansi & Keuangan">Akuntansi & Keuangan</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="mt-6">
+              <button type="submit" id="save-button" class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-opacity">
+                <i class="fas fa-save mr-2"></i>Simpan Perubahan
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div> <script>
+    // --- BAGIAN LOGIN BARU ---
+    // ========================
+
+    // --- Kredensial Tidak Aman (Hardcoded) ---
+    // Ganti ini dengan username dan password Anda
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "admin123";
+
+    const loginScreen = document.getElementById('login-screen');
+    const adminDashboard = document.getElementById('admin-dashboard');
+    const loginForm = document.getElementById('login-form');
+    const logoutBtn = document.getElementById('logout-btn');
+    const errorMessage = document.getElementById('error-message');
+
+    function checkLoginStatus() {
+      // Cek sessionStorage untuk status login
+      if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+        // Jika sudah login, tampilkan dashboard
+        adminDashboard.classList.remove('hidden');
+        loginScreen.classList.add('hidden');
+      } else {
+        // Jika belum, tampilkan layar login
+        adminDashboard.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+      }
+    }
+
+    function handleLogin(event) {
+      event.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (username === ADMIN_USER && password === ADMIN_PASS) {
+        // Berhasil
+        sessionStorage.setItem('isAdminLoggedIn', 'true');
+        checkLoginStatus(); // Panggil fungsi untuk menukar layar
+        errorMessage.classList.add('hidden'); // Sembunyikan pesan error
+      } else {
+        // Gagal
+        errorMessage.textContent = 'Username atau password salah.';
+        errorMessage.classList.remove('hidden');
+      }
+    }
+
+    function handleLogout() {
+      if (confirm('Apakah Anda yakin ingin logout?')) {
+        sessionStorage.removeItem('isAdminLoggedIn');
+        checkLoginStatus(); // Panggil fungsi untuk menukar layar
+        // Kosongkan form login untuk keamanan
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+      }
+    }
+
+    // Tambahkan event listener untuk login dan logout
+    loginForm.addEventListener('submit', handleLogin);
+    logoutBtn.addEventListener('click', handleLogout);
+
+    // ========================
+    // --- Akhir Bagian Login ---
+
+    // --- Kode Panel Admin Anda (sudah ada sebelumnya) ---
+    const STORAGE_KEY = 'smk_krian_registrations';
+    const modal = document.getElementById('crud-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const crudForm = document.getElementById('crud-form');
+    const tableBody = document.getElementById('registrants-table-body');
+    const addNewBtn = document.getElementById('add-new-btn');
+    const closeModalBtn = document.getElementById('close-modal');
+
+    // === Helper Functions ===
+
+    function getRegistrations() {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : [];
+    }
+
+    function saveRegistrations(registrations) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(registrations));
+    }
+
+    function showModal(title) {
+      modalTitle.textContent = title;
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      modal.classList.remove('show');
+      crudForm.reset();
+      document.getElementById('registration-id').value = '';
+      document.body.style.overflow = 'auto';
+    }
+
+    function formatDate(isoString) {
+      if (!isoString) return 'N/A';
+      return new Date(isoString).toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+
+    // === Core CRUD Functions ===
+
+    function renderTable() {
+      const registrations = getRegistrations();
+      tableBody.innerHTML = ''; // Kosongkan tabel
+
+      if (registrations.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+              <i class="fas fa-box-open text-4xl mb-3"></i>
+              <p>Belum ada data pendaftar.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      registrations.forEach(reg => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50';
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm font-medium text-gray-900">${reg.nama_lengkap}</div>
+            <div class="text-sm text-gray-500">${reg.id}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+              ${reg.jurusan_pilihan}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(reg.tanggal_daftar)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <div>${reg.email}</div>
+            <div>${reg.nomor_telepon}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <button class="edit-btn text-indigo-600 hover:text-indigo-900" data-id="${reg.id}">
+              <i class="fas fa-edit mr-1"></i>Edit
+            </button>
+            <button class="delete-btn text-red-600 hover:text-red-900 ml-4" data-id="${reg.id}">
+              <i class="fas fa-trash mr-1"></i>Delete
+            </button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const id = document.getElementById('registration-id').value;
+      const registrations = getRegistrations();
+
+      const formData = {
+        nama_lengkap: document.getElementById('nama_lengkap').value,
+        tanggal_lahir: document.getElementById('tanggal_lahir').value,
+        jenis_kelamin: document.getElementById('jenis_kelamin').value,
+        alamat: document.getElementById('alamat').value,
+        nama_orang_tua: document.getElementById('nama_orang_tua').value,
+        nomor_telepon: document.getElementById('nomor_telepon').value,
+        email: document.getElementById('email').value,
+        jurusan_pilihan: document.getElementById('jurusan_pilihan').value,
+      };
+
+      if (id) {
+        // --- Update ---
+        const updatedRegistrations = registrations.map(reg => {
+          if (reg.id === id) {
+            return {
+              ...reg, // Pertahankan data lama
+              ...formData // Timpa dengan data baru
+            };
+          }
+          return reg;
+        });
+        saveRegistrations(updatedRegistrations);
+      } else {
+        // --- Create ---
+        const newRegistration = {
+          ...formData,
+          id: Date.now().toString(),
+          tanggal_daftar: new Date().toISOString()
+        };
+        registrations.push(newRegistration);
+        saveRegistrations(registrations);
+      }
+
+      renderTable();
+      closeModal();
+    }
+
+    function handleTableClick(event) {
+      const target = event.target.closest('button');
+      if (!target) return;
+
+      const id = target.getAttribute('data-id');
+
+      if (target.classList.contains('edit-btn')) {
+        // --- Edit ---
+        const registrations = getRegistrations();
+        const registrationToEdit = registrations.find(reg => reg.id === id);
+        
+        if (registrationToEdit) {
+          document.getElementById('registration-id').value = registrationToEdit.id;
+          document.getElementById('nama_lengkap').value = registrationToEdit.nama_lengkap;
+          document.getElementById('tanggal_lahir').value = registrationToEdit.tanggal_lahir;
+          document.getElementById('jenis_kelamin').value = registrationToEdit.jenis_kelamin;
+          document.getElementById('alamat').value = registrationToEdit.alamat;
+          document.getElementById('nama_orang_tua').value = registrationToEdit.nama_orang_tua;
+          document.getElementById('nomor_telepon').value = registrationToEdit.nomor_telepon;
+          document.getElementById('email').value = registrationToEdit.email;
+          document.getElementById('jurusan_pilihan').value = registrationToEdit.jurusan_pilihan;
+          
+          showModal('Edit Data Pendaftar');
+        }
+      } else if (target.classList.contains('delete-btn')) {
+        // --- Delete ---
+        if (confirm(`Yakin ingin menghapus pendaftar dengan ID: ${id}?`)) {
+          let registrations = getRegistrations();
+          registrations = registrations.filter(reg => reg.id !== id);
+          saveRegistrations(registrations);
+          renderTable();
+        }
+      }
+    }
+
+    // === Event Listeners ===
+
+    // Tampilkan data saat halaman dimuat
+    // DIMODIFIKASI: Panggil checkLoginStatus dulu
+    document.addEventListener('DOMContentLoaded', () => {
+      checkLoginStatus(); // Cek login saat DOM dimuat
+      renderTable(); // Tetap render tabel (meskipun mungkin tersembunyi)
+    });
+
+    // Buka modal untuk 'Tambah Baru'
+    addNewBtn.addEventListener('click', () => {
+      crudForm.reset();
+      showModal('Tambah Pendaftar Baru');
+    });
+
+    // Tutup modal
+    closeModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    // Handle submit form (Create & Update)
+    crudForm.addEventListener('submit', handleFormSubmit);
+
+    // Handle klik tombol Edit & Delete di tabel
+    tableBody.addEventListener('click', handleTableClick);
+
+  </script>
+</body>
+</html>
